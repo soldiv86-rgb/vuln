@@ -1,0 +1,122 @@
+-- Roblox Lua UI Example
+-- Place this script in a LocalScript inside StarterPlayerScripts or StarterGui
+
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "CustomUI"
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Create Main Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 200)
+frame.Position = UDim2.new(0.5, -150, 0.5, -100)
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+
+-- Add Title Text
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Text = "Custom UI"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+title.Parent = frame
+
+-- Add Button
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0, 200, 0, 50)
+button.Position = UDim2.new(0.5, -100, 0.5, -25)
+button.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
+button.Text = "Click Me!"
+button.TextScaled = true
+button.Font = Enum.Font.Gotham
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Parent = frame
+
+-- Button Click Event
+button.MouseButton1Click:Connect(function()
+    button.Text = "Clicked!"
+    button.BackgroundColor3 = Color3.fromRGB(80, 180, 80)
+end)
+
+-- Egg Enhancer Tab Button
+local eggTab = Instance.new("TextButton")
+eggTab.Size = UDim2.new(0, 200, 0, 40)
+eggTab.Position = UDim2.new(0.5, -100, 0.5, 40)
+eggTab.BackgroundColor3 = Color3.fromRGB(255, 170, 60)
+eggTab.Text = "Egg Enhancer"
+eggTab.TextScaled = true
+eggTab.Font = Enum.Font.Gotham
+eggTab.TextColor3 = Color3.fromRGB(0, 0, 0)
+eggTab.Parent = frame
+
+eggTab.MouseButton1Click:Connect(function()
+    print("Egg Enhancer Tab Opened!")
+end)
+
+
+-- Apply Dark Theme and Rounded Corners
+local function applyStyling(uiElement)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = uiElement
+end
+
+-- Apply rounded corners
+applyStyling(frame)
+applyStyling(button)
+applyStyling(eggTab)
+
+-- Dark theme colors
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+button.TextColor3 = Color3.fromRGB(220, 220, 220)
+
+eggTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+eggTab.TextColor3 = Color3.fromRGB(230, 230, 230)
+
+
+-- Close and Reopen UI
+-- Create toggle button (reopener)
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 80, 0, 35)
+toggleButton.Position = UDim2.new(0, 20, 0.5, -20)
+toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toggleButton.Text = "Open UI"
+toggleButton.TextScaled = true
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Parent = screenGui
+
+applyStyling(toggleButton)
+
+-- Close button inside frame
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -40, 0, 10)
+closeButton.BackgroundColor3 = Color3.fromRGB(70, 0, 0)
+closeButton.Text = "X"
+closeButton.TextScaled = true
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.Parent = frame
+
+applyStyling(closeButton)
+
+local uiOpen = true
+
+closeButton.MouseButton1Click:Connect(function()
+    frame.Visible = false
+    uiOpen = false
+end)
+
+toggleButton.MouseButton1Click:Connect(function()
+    uiOpen = not uiOpen
+    frame.Visible = uiOpen
+    toggleButton.Text = uiOpen and "Close UI" or "Open UI"
+end)
+
