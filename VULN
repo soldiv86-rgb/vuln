@@ -7,15 +7,16 @@ local function startFruitLoop()
 
     task.spawn(function()
         while _G.loopFav do
-            local fruitName = "Carrot [0.38kg]"
+            local fruitName = "Carrot [0.38kg]" -- change fruit here
             local player = game:GetService("Players").LocalPlayer
             local fruit = player.Backpack:FindFirstChild(fruitName)
 
             if fruit then
                 game:GetService("ReplicatedStorage").GameEvents.Favorite_Item:FireServer(fruit)
+                -- loop unfav/fav by firing the same remote repeatedly
             end
 
-            task.wait(1)
+            task.wait(0.2) -- 0.2 seconds cooldown
         end
     end)
 
@@ -46,13 +47,13 @@ local old; old = hookmetamethod(game, "__namecall", function(self, ...)
         
         -- ⭐ START when EquipPet is fired
         if args[1] == "EquipPet" and tostring(args[2]) == petUUID then
-            print("EquipPet detected → starting loop")
+            print("EquipPet detected → starting fruit loop")
             startFruitLoop()
         end
         
         -- ⭐ STOP when UnequipPet is fired
         if args[1] == "UnequipPet" and tostring(args[2]) == petUUID then
-            print("UnequipPet detected → stopping loop")
+            print("UnequipPet detected → stopping fruit loop")
             stopFruitLoop()
         end
 
