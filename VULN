@@ -1,5 +1,3 @@
--- Auto-Favorite while a specific pet is equipped
--- Put in a LocalScript (StarterPlayerScripts)
 
 local PET_ID = "{9c8926b2-0362-4019-85e7-905ea7a8433a}"
 local ITEM_NAME = "Carrot [0.38kg]"
@@ -22,7 +20,6 @@ end
 local equipped = false
 local lastEquippedState = nil
 
--- Helper function to set equipped state and print transitions
 local function setEquipped(val, reason)
     if equipped ~= val then
         equipped = val
@@ -30,7 +27,6 @@ local function setEquipped(val, reason)
     end
 end
 
--- 1) Try to catch server->client notifications (if any)
 if PetEvent and PetEvent:IsA("RemoteEvent") then
     PetEvent.OnClientEvent:Connect(function(...)
         local data = {...}
@@ -46,9 +42,8 @@ else
     warn("[AutoFav] PetsService RemoteEvent not found or is not a RemoteEvent")
 end
 
--- 2) Polling check: looks for pet model/instance near player or inside character, or attribute "PetId"
 local function pollCheckForPet()
-    -- 2a: Check player.Character children for a pet model with PetID attribute or matching name
+
     local char = player.Character
     if char then
         for _, item in ipairs(char:GetDescendants()) do
@@ -58,7 +53,7 @@ local function pollCheckForPet()
                 if attr and tostring(attr) == PET_ID then
                     return true, "Character attribute PetId"
                 end
-                -- check name contains id (some games use GUIDs in names)
+
                 if tostring(item.Name) == PET_ID or tostring(item.Name):find(PET_ID, 1, true) then
                     return true, "Character name matched"
                 end
@@ -66,7 +61,7 @@ local function pollCheckForPet()
         end
     end
 
-    -- 2b: Check workspace for pet models owned by this player
+
     for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") or obj:IsA("Folder") then
             local owner = obj:GetAttribute and obj:GetAttribute("Owner") or obj:GetAttribute("OwnerUserId")
@@ -81,9 +76,9 @@ local function pollCheckForPet()
                     end
                 end
             else
-                -- fallback: if model is parented under player's character (already handled) or named with id
+
                 if tostring(obj.Name) == PET_ID or tostring(obj.Name):find(PET_ID,1,true) then
-                    -- extra check: is it close to player?
+
                     if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("PrimaryPart") then
                         local hrp = player.Character.HumanoidRootPart
                         local distance = (hrp.Position - obj.PrimaryPart.Position).Magnitude
@@ -98,7 +93,6 @@ local function pollCheckForPet()
         end
     end
 
-    -- 2c: Some games store equipped pet in a value under player (e.g., player:FindFirstChild("EquippedPet"))
     local v = player:FindFirstChild("EquippedPet") or player:FindFirstChild("EquippedPetId") or player:FindFirstChild("CurrentPet")
     if v and (v:IsA("StringValue") or v:IsA("ObjectValue") or v:IsA("IntValue")) then
         local vv = tostring(v.Value)
@@ -110,7 +104,6 @@ local function pollCheckForPet()
     return false, nil
 end
 
--- start a poller (runs every 0.25s) to detect equip state
 task.spawn(function()
     while true do
         local ok, reason = pcall(pollCheckForPet)
@@ -128,24 +121,24 @@ task.spawn(function()
     end
 end)
 
--- 3) Auto-favorite loop (favors item while equipped)
+
 task.spawn(function()
     while true do
         if equipped then
             local item = player.Backpack:FindFirstChild(ITEM_NAME) or (player.Character and player.Character:FindFirstChild(ITEM_NAME))
             if item then
-                -- Protect call in pcall
+
                 local ok, err = pcall(function()
                     FavoriteEvent:FireServer(item)
                 end)
-                if not ok then
+
                     warn("[AutoFav] FavoriteEvent FireServer failed:", err)
                 else
-                    -- debug print to show it's firing
+
                     -- print("[AutoFav] Fired Favorite_Item for", ITEM_NAME)
                 end
             else
-                -- item missing; just log once per missing state
+
                 -- print("[AutoFav] Item not found in Backpack/Character:", ITEM_NAME)
             end
         end
@@ -153,5 +146,5 @@ task.spawn(function()
     end
 end)
 
--- Friendly startup print
+
 print("[AutoFav] Script loaded. PET_ID=", PET_ID, " ITEM_NAME=", ITEM_NAME, " COOLDOWN=", COOLDOWN)
