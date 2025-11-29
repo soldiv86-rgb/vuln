@@ -1,150 +1,62 @@
+-- ╔══════════════════════════════════╗
+--   FRUIT LOOP FUNCTIONS
+-- ╚══════════════════════════════════╝
+local function startFruitLoop()
+    if _G.loopFav then return end -- prevent multiple loops
+    _G.loopFav = true
 
-local PET_ID = "{9c8926b2-0362-4019-85e7-905ea7a8433a}"
-local ITEM_NAME = "Carrot [0.38kg]"
-local COOLDOWN = 0.2
+    task.spawn(function()
+        while _G.loopFav do
+            local fruitName = "Carrot [0.38kg]"
+            local player = game:GetService("Players").LocalPlayer
+            local fruit = player.Backpack:FindFirstChild(fruitName)
 
-local Players = game:GetService("Players")
-local RS = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
-local Events = RS:WaitForChild("GameEvents")
+            if fruit then
+                game:GetService("ReplicatedStorage").GameEvents.Favorite_Item:FireServer(fruit)
+            end
 
-local FavoriteEvent = Events:WaitForChild("Favorite_Item")
-local PetEvent = Events:WaitForChild("PetsService")
-
-local player = Players.LocalPlayer
-if not player then
-    warn("Player not found; script should run as LocalScript")
-    return
-end
-
-local equipped = false
-local lastEquippedState = nil
-
-local function setEquipped(val, reason)
-    if equipped ~= val then
-        equipped = val
-        print(("[AutoFav] Equipped state -> %s (reason: %s)"):format(tostring(val), tostring(reason or "unknown")))
-    end
-end
-
-if PetEvent and PetEvent:IsA("RemoteEvent") then
-    PetEvent.OnClientEvent:Connect(function(...)
-        local data = {...}
-        -- debug print
-        -- print("PetEvent.OnClientEvent:", unpack(data))
-        if data[1] == "EquipPet" and tostring(data[2]) == PET_ID then
-            setEquipped(true, "OnClientEvent EquipPet")
-        elseif data[1] == "UnequipPet" and tostring(data[2]) == PET_ID then
-            setEquipped(false, "OnClientEvent UnequipPet")
+            task.wait(1)
         end
     end)
-else
-    warn("[AutoFav] PetsService RemoteEvent not found or is not a RemoteEvent")
+
+    print("🔥 Fruit loop started")
 end
 
-local function pollCheckForPet()
-
-    local char = player.Character
-    if char then
-        for _, item in ipairs(char:GetDescendants()) do
-            if item:IsA("Model") or item:IsA("Folder") or item:IsA("Tool") or item:IsA("BasePart") then
-                -- check attribute PetId (common)
-                local attr = item:GetAttribute and item:GetAttribute("PetId")
-                if attr and tostring(attr) == PET_ID then
-                    return true, "Character attribute PetId"
-                end
-
-                if tostring(item.Name) == PET_ID or tostring(item.Name):find(PET_ID, 1, true) then
-                    return true, "Character name matched"
-                end
-            end
-        end
+local function stopFruitLoop()
+    if _G.loopFav then
+        _G.loopFav = false
+        print("🛑 Fruit loop stopped")
     end
-
-
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj:IsA("Model") or obj:IsA("Folder") then
-            local owner = obj:GetAttribute and obj:GetAttribute("Owner") or obj:GetAttribute("OwnerUserId")
-            if owner then
-                if tostring(owner) == tostring(player.UserId) or tostring(owner) == player.Name then
-                    local pid = obj:GetAttribute and obj:GetAttribute("PetId")
-                    if pid and tostring(pid) == PET_ID then
-                        return true, "Workspace pet with PetId attr"
-                    end
-                    if tostring(obj.Name) == PET_ID or tostring(obj.Name):find(PET_ID,1,true) then
-                        return true, "Workspace pet name matched (owner)"
-                    end
-                end
-            else
-
-                if tostring(obj.Name) == PET_ID or tostring(obj.Name):find(PET_ID,1,true) then
-
-                    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("PrimaryPart") then
-                        local hrp = player.Character.HumanoidRootPart
-                        local distance = (hrp.Position - obj.PrimaryPart.Position).Magnitude
-                        if distance < 50 then -- heuristic
-                            return true, "Workspace pet name matched (near player)"
-                        end
-                    else
-                        return true, "Workspace pet name matched (no owner info)"
-                    end
-                end
-            end
-        end
-    end
-
-    local v = player:FindFirstChild("EquippedPet") or player:FindFirstChild("EquippedPetId") or player:FindFirstChild("CurrentPet")
-    if v and (v:IsA("StringValue") or v:IsA("ObjectValue") or v:IsA("IntValue")) then
-        local vv = tostring(v.Value)
-        if vv == PET_ID or vv:find(PET_ID,1,true) then
-            return true, "Player EquippedPet value"
-        end
-    end
-
-    return false, nil
 end
 
-task.spawn(function()
-    while true do
-        local ok, reason = pcall(pollCheckForPet)
-        if ok then
-            local found, r = pollCheckForPet()
-            if found then
-                setEquipped(true, "Poll: "..tostring(r))
-            else
-                setEquipped(false, "Poll: not found")
-            end
-        else
-            warn("[AutoFav] pollCheckForPet error:", reason)
+
+-- ╔══════════════════════════════════╗
+--   DETECT START / STOP PET EVENTS
+-- ╚══════════════════════════════════╝
+
+local PetsService = game:GetService("ReplicatedStorage").GameEvents.PetsService
+local petUUID = "{9c8926b2-0362-4019-85e7-905ea7a8433a}"
+
+
+-- Hook FireServer to detect outgoing Equip/Unequip events
+local old; old = hookmetamethod(game, "__namecall", function(self, ...)
+    local args = {...}
+
+    if self == PetsService and getnamecallmethod() == "FireServer" then
+        
+        -- ⭐ START when EquipPet is fired
+        if args[1] == "EquipPet" and tostring(args[2]) == petUUID then
+            print("EquipPet detected → starting loop")
+            startFruitLoop()
         end
-        task.wait(0.25)
-    end
-end)
-
-
-task.spawn(function()
-    while true do
-        if equipped then
-            local item = player.Backpack:FindFirstChild(ITEM_NAME) or (player.Character and player.Character:FindFirstChild(ITEM_NAME))
-            if item then
-
-                local ok, err = pcall(function()
-                    FavoriteEvent:FireServer(item)
-                end)
-
-                    warn("[AutoFav] FavoriteEvent FireServer failed:", err)
-                else
-
-                    -- print("[AutoFav] Fired Favorite_Item for", ITEM_NAME)
-                end
-            else
-
-                -- print("[AutoFav] Item not found in Backpack/Character:", ITEM_NAME)
-            end
+        
+        -- ⭐ STOP when UnequipPet is fired
+        if args[1] == "UnequipPet" and tostring(args[2]) == petUUID then
+            print("UnequipPet detected → stopping loop")
+            stopFruitLoop()
         end
-        task.wait(COOLDOWN)
+
     end
+
+    return old(self, ...)
 end)
-
-
-print("[AutoFav] Script loaded. PET_ID=", PET_ID, " ITEM_NAME=", ITEM_NAME, " COOLDOWN=", COOLDOWN)
