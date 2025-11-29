@@ -1,5 +1,5 @@
 -- State variable to control auto favorite
-local autoFavorite = false
+local autoFavorite = true
 
 -- Function to start auto-favoriting
 local function startAutoFavorite()
