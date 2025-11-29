@@ -1,8 +1,10 @@
--- State variable to control auto favorite
+-- Auto favorite state
 local autoFavorite = false
+local petId = "{9c8926b2-0362-4019-85e7-905ea7a8433a}"
 
--- Function to start auto-favoriting
+-- Start auto-favoriting loop
 local function startAutoFavorite()
+    if autoFavorite then return end
     autoFavorite = true
     spawn(function()
         while autoFavorite do
@@ -15,41 +17,38 @@ local function startAutoFavorite()
     end)
 end
 
--- Function to stop auto-favoriting
+-- Stop auto-favoriting loop
 local function stopAutoFavorite()
     autoFavorite = false
 end
 
--- Function to equip pet dynamically
-local function equipPet(petId)
-    local player = game.Players.LocalPlayer
-    local pet = player.Backpack:FindFirstChild(petId) or player.Character:FindFirstChild(petId)
-    
-    -- Get pet's CFrame if it exists, otherwise use default
-    local petCFrame = pet and pet.PrimaryPart and pet.PrimaryPart.CFrame or CFrame.new()
-    
-    game.ReplicatedStorage.GameEvents.PetsService:FireServer(
-        "EquipPet",
-        petId,
-        petCFrame
-    )
-    
-    startAutoFavorite()
+-- Hook PetsService:FireServer to handle dynamic CFrame and auto loop
+local PetsService = game.ReplicatedStorage.GameEvents.PetsService
+local oldFireServer = PetsService.FireServer
+
+PetsService.FireServer = function(self, action, id, cframe)
+    -- Dynamically get CFrame if not provided or incorrect
+    local finalCFrame = cframe
+    if action == "EquipPet" and id == petId then
+        -- Try to get the pet's current CFrame from Backpack or Character
+        local player = game.Players.LocalPlayer
+        local pet = player.Backpack:FindFirstChild(id) or player.Character:FindFirstChild(id)
+        if pet and pet.PrimaryPart then
+            finalCFrame = pet.PrimaryPart.CFrame
+        else
+            finalCFrame = CFrame.new() -- fallback
+        end
+    end
+
+    -- Call original FireServer
+    oldFireServer(self, action, id, finalCFrame)
+
+    -- Auto loop control
+    if id == petId then
+        if action == "EquipPet" then
+            startAutoFavorite()
+        elseif action == "UnequipPet" then
+            stopAutoFavorite()
+        end
+    end
 end
-
--- Function to unequip pet
-local function unequipPet(petId)
-    game.ReplicatedStorage.GameEvents.PetsService:FireServer(
-        "UnequipPet",
-        petId
-    )
-    
-    stopAutoFavorite()
-end
-
--- Example usage
-local petId = "{9c8926b2-0362-4019-85e7-905ea7a8433a}"
-equipPet(petId)
-
--- When you want to unequip
-unequipPet(petId)
