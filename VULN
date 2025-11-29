@@ -8,7 +8,7 @@ local function startAutoFavorite()
     autoFavorite = true
     spawn(function()
         while autoFavorite do
-            local item = game.Players.LocalPlayer.Backpack:FindFirstChild("Carrot [0.38kg]")
+            local item = game.Players.LocalPlayer.Character:FindFirstChild("Carrot [0.38kg]")
             if item then
                 game.ReplicatedStorage.GameEvents.Favorite_Item:FireServer(item)
             end
