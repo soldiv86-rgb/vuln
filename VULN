@@ -1,57 +1,36 @@
--- FRUIT LOOP VARIABLES
-local fruitName = "Carrot [0.38kg]" -- change to your fruit
-local petUUID = "{9c8926b2-0362-4019-85e7-905ea7a8433a}"
-local loopActive = false
+-- State variable to control auto favorite
+local autoFavorite = false
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local PetsService = ReplicatedStorage.GameEvents.PetsService
-local FavoriteRemote = ReplicatedStorage.GameEvents.Favorite_Item
-local localPlayer = Players.LocalPlayer
-
--- START LOOP
-local function startFruitLoop()
-    if loopActive then return end
-    loopActive = true
-
-    task.spawn(function()
-        while loopActive do
-            local fruit = localPlayer.Backpack:FindFirstChild(fruitName)
-            if fruit then
-                FavoriteRemote:FireServer(fruit)
+-- Function to start auto-favoriting
+local function startAutoFavorite()
+    autoFavorite = true
+    spawn(function() -- runs in a separate thread
+        while autoFavorite do
+            local item = game.Players.LocalPlayer.Backpack:FindFirstChild("Carrot [0.38kg]")
+            if item then
+                game.ReplicatedStorage.GameEvents.Favorite_Item:FireServer(item)
             end
-            task.wait(0.2) -- cooldown
+            wait(0.2)
         end
     end)
-
-    print("🔥 Fruit loop started")
 end
 
--- STOP LOOP
-local function stopFruitLoop()
-    if loopActive then
-        loopActive = false
-        print("🛑 Fruit loop stopped")
-    end
+-- Function to stop auto-favoriting
+local function stopAutoFavorite()
+    autoFavorite = false
 end
 
--- HOOK FireServer TO DETECT PET EQUIP/UNEQUIP
-local old; old = hookmetamethod(game, "__namecall", function(self, ...)
-    local args = {...}
+-- Equip pet and start auto-favoriting
+game.ReplicatedStorage.GameEvents.PetsService:FireServer(
+    "EquipPet",
+    "{9c8926b2-0362-4019-85e7-905ea7a8433a}",
+    CFrame.new(-18.4633, -9.5367e-07, -115.4868) * CFrame.Angles(0, 0, 0)
+)
+startAutoFavorite()
 
-    if self == PetsService and getnamecallmethod() == "FireServer" then
-        -- START loop on EquipPet
-        if args[1] == "EquipPet" and tostring(args[2]) == petUUID then
-            print("EquipPet detected → starting fruit loop")
-            startFruitLoop()
-        end
-
-        -- STOP loop on UnequipPet
-        if args[1] == "UnequipPet" and tostring(args[2]) == petUUID then
-            print("UnequipPet detected → stopping fruit loop")
-            stopFruitLoop()
-        end
-    end
-
-    return old(self, ...)
-end)
+-- Unequip pet and stop auto-favoriting
+game.ReplicatedStorage.GameEvents.PetsService:FireServer(
+    "UnequipPet",
+    "{9c8926b2-0362-4019-85e7-905ea7a8433a}"
+)
+stopAutoFavorite()
