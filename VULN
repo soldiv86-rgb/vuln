@@ -1,122 +1,157 @@
--- Roblox Lua UI Example
--- Place this script in a LocalScript inside StarterPlayerScripts or StarterGui
+-- Auto-Favorite while a specific pet is equipped
+-- Put in a LocalScript (StarterPlayerScripts)
 
--- Create ScreenGui
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "CustomUI"
-screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+local PET_ID = "{9c8926b2-0362-4019-85e7-905ea7a8433a}"
+local ITEM_NAME = "Carrot [0.38kg]"
+local COOLDOWN = 0.2
 
--- Create Main Frame
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 300, 0, 200)
-frame.Position = UDim2.new(0.5, -150, 0.5, -100)
-frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
-frame.Parent = screenGui
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local Events = RS:WaitForChild("GameEvents")
 
--- Add Title Text
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 40)
-title.BackgroundTransparency = 1
-title.Text = "Custom UI"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextScaled = true
-title.Font = Enum.Font.GothamBold
-title.Parent = frame
+local FavoriteEvent = Events:WaitForChild("Favorite_Item")
+local PetEvent = Events:WaitForChild("PetsService")
 
--- Add Button
-local button = Instance.new("TextButton")
-button.Size = UDim2.new(0, 200, 0, 50)
-button.Position = UDim2.new(0.5, -100, 0.5, -25)
-button.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
-button.Text = "Click Me!"
-button.TextScaled = true
-button.Font = Enum.Font.Gotham
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.Parent = frame
-
--- Button Click Event
-button.MouseButton1Click:Connect(function()
-    button.Text = "Clicked!"
-    button.BackgroundColor3 = Color3.fromRGB(80, 180, 80)
-end)
-
--- Egg Enhancer Tab Button
-local eggTab = Instance.new("TextButton")
-eggTab.Size = UDim2.new(0, 200, 0, 40)
-eggTab.Position = UDim2.new(0.5, -100, 0.5, 40)
-eggTab.BackgroundColor3 = Color3.fromRGB(255, 170, 60)
-eggTab.Text = "Egg Enhancer"
-eggTab.TextScaled = true
-eggTab.Font = Enum.Font.Gotham
-eggTab.TextColor3 = Color3.fromRGB(0, 0, 0)
-eggTab.Parent = frame
-
-eggTab.MouseButton1Click:Connect(function()
-    print("Egg Enhancer Tab Opened!")
-end)
-
-
--- Apply Dark Theme and Rounded Corners
-local function applyStyling(uiElement)
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 12)
-    corner.Parent = uiElement
+local player = Players.LocalPlayer
+if not player then
+    warn("Player not found; script should run as LocalScript")
+    return
 end
 
--- Apply rounded corners
-applyStyling(frame)
-applyStyling(button)
-applyStyling(eggTab)
+local equipped = false
+local lastEquippedState = nil
 
--- Dark theme colors
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-button.TextColor3 = Color3.fromRGB(220, 220, 220)
+-- Helper function to set equipped state and print transitions
+local function setEquipped(val, reason)
+    if equipped ~= val then
+        equipped = val
+        print(("[AutoFav] Equipped state -> %s (reason: %s)"):format(tostring(val), tostring(reason or "unknown")))
+    end
+end
 
-eggTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-eggTab.TextColor3 = Color3.fromRGB(230, 230, 230)
+-- 1) Try to catch server->client notifications (if any)
+if PetEvent and PetEvent:IsA("RemoteEvent") then
+    PetEvent.OnClientEvent:Connect(function(...)
+        local data = {...}
+        -- debug print
+        -- print("PetEvent.OnClientEvent:", unpack(data))
+        if data[1] == "EquipPet" and tostring(data[2]) == PET_ID then
+            setEquipped(true, "OnClientEvent EquipPet")
+        elseif data[1] == "UnequipPet" and tostring(data[2]) == PET_ID then
+            setEquipped(false, "OnClientEvent UnequipPet")
+        end
+    end)
+else
+    warn("[AutoFav] PetsService RemoteEvent not found or is not a RemoteEvent")
+end
 
+-- 2) Polling check: looks for pet model/instance near player or inside character, or attribute "PetId"
+local function pollCheckForPet()
+    -- 2a: Check player.Character children for a pet model with PetID attribute or matching name
+    local char = player.Character
+    if char then
+        for _, item in ipairs(char:GetDescendants()) do
+            if item:IsA("Model") or item:IsA("Folder") or item:IsA("Tool") or item:IsA("BasePart") then
+                -- check attribute PetId (common)
+                local attr = item:GetAttribute and item:GetAttribute("PetId")
+                if attr and tostring(attr) == PET_ID then
+                    return true, "Character attribute PetId"
+                end
+                -- check name contains id (some games use GUIDs in names)
+                if tostring(item.Name) == PET_ID or tostring(item.Name):find(PET_ID, 1, true) then
+                    return true, "Character name matched"
+                end
+            end
+        end
+    end
 
--- Close and Reopen UI
--- Create toggle button (reopener)
-local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(0, 80, 0, 35)
-toggleButton.Position = UDim2.new(0, 20, 0.5, -20)
-toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-toggleButton.Text = "Open UI"
-toggleButton.TextScaled = true
-toggleButton.Font = Enum.Font.GothamBold
-toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleButton.Parent = screenGui
+    -- 2b: Check workspace for pet models owned by this player
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") or obj:IsA("Folder") then
+            local owner = obj:GetAttribute and obj:GetAttribute("Owner") or obj:GetAttribute("OwnerUserId")
+            if owner then
+                if tostring(owner) == tostring(player.UserId) or tostring(owner) == player.Name then
+                    local pid = obj:GetAttribute and obj:GetAttribute("PetId")
+                    if pid and tostring(pid) == PET_ID then
+                        return true, "Workspace pet with PetId attr"
+                    end
+                    if tostring(obj.Name) == PET_ID or tostring(obj.Name):find(PET_ID,1,true) then
+                        return true, "Workspace pet name matched (owner)"
+                    end
+                end
+            else
+                -- fallback: if model is parented under player's character (already handled) or named with id
+                if tostring(obj.Name) == PET_ID or tostring(obj.Name):find(PET_ID,1,true) then
+                    -- extra check: is it close to player?
+                    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and obj:FindFirstChild("PrimaryPart") then
+                        local hrp = player.Character.HumanoidRootPart
+                        local distance = (hrp.Position - obj.PrimaryPart.Position).Magnitude
+                        if distance < 50 then -- heuristic
+                            return true, "Workspace pet name matched (near player)"
+                        end
+                    else
+                        return true, "Workspace pet name matched (no owner info)"
+                    end
+                end
+            end
+        end
+    end
 
-applyStyling(toggleButton)
+    -- 2c: Some games store equipped pet in a value under player (e.g., player:FindFirstChild("EquippedPet"))
+    local v = player:FindFirstChild("EquippedPet") or player:FindFirstChild("EquippedPetId") or player:FindFirstChild("CurrentPet")
+    if v and (v:IsA("StringValue") or v:IsA("ObjectValue") or v:IsA("IntValue")) then
+        local vv = tostring(v.Value)
+        if vv == PET_ID or vv:find(PET_ID,1,true) then
+            return true, "Player EquippedPet value"
+        end
+    end
 
--- Close button inside frame
-local closeButton = Instance.new("TextButton")
-closeButton.Size = UDim2.new(0, 30, 0, 30)
-closeButton.Position = UDim2.new(1, -40, 0, 10)
-closeButton.BackgroundColor3 = Color3.fromRGB(70, 0, 0)
-closeButton.Text = "X"
-closeButton.TextScaled = true
-closeButton.Font = Enum.Font.GothamBold
-closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeButton.Parent = frame
+    return false, nil
+end
 
-applyStyling(closeButton)
-
-local uiOpen = true
-
-closeButton.MouseButton1Click:Connect(function()
-    frame.Visible = false
-    uiOpen = false
+-- start a poller (runs every 0.25s) to detect equip state
+task.spawn(function()
+    while true do
+        local ok, reason = pcall(pollCheckForPet)
+        if ok then
+            local found, r = pollCheckForPet()
+            if found then
+                setEquipped(true, "Poll: "..tostring(r))
+            else
+                setEquipped(false, "Poll: not found")
+            end
+        else
+            warn("[AutoFav] pollCheckForPet error:", reason)
+        end
+        task.wait(0.25)
+    end
 end)
 
-toggleButton.MouseButton1Click:Connect(function()
-    uiOpen = not uiOpen
-    frame.Visible = uiOpen
-    toggleButton.Text = uiOpen and "Close UI" or "Open UI"
+-- 3) Auto-favorite loop (favors item while equipped)
+task.spawn(function()
+    while true do
+        if equipped then
+            local item = player.Backpack:FindFirstChild(ITEM_NAME) or (player.Character and player.Character:FindFirstChild(ITEM_NAME))
+            if item then
+                -- Protect call in pcall
+                local ok, err = pcall(function()
+                    FavoriteEvent:FireServer(item)
+                end)
+                if not ok then
+                    warn("[AutoFav] FavoriteEvent FireServer failed:", err)
+                else
+                    -- debug print to show it's firing
+                    -- print("[AutoFav] Fired Favorite_Item for", ITEM_NAME)
+                end
+            else
+                -- item missing; just log once per missing state
+                -- print("[AutoFav] Item not found in Backpack/Character:", ITEM_NAME)
+            end
+        end
+        task.wait(COOLDOWN)
+    end
 end)
 
+-- Friendly startup print
+print("[AutoFav] Script loaded. PET_ID=", PET_ID, " ITEM_NAME=", ITEM_NAME, " COOLDOWN=", COOLDOWN)
