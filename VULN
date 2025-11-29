@@ -1,5 +1,5 @@
 -- State variable to control auto favorite
-local autoFavorite = true
+local autoFavorite = false
 
 -- Function to start auto-favoriting
 local function startAutoFavorite()
@@ -20,18 +20,36 @@ local function stopAutoFavorite()
     autoFavorite = false
 end
 
--- Equip pet and start auto-favoriting
--- Use CFrame.new() without hardcoding coordinates
-game.ReplicatedStorage.GameEvents.PetsService:FireServer(
-    "EquipPet",
-    "{9c8926b2-0362-4019-85e7-905ea7a8433a}",
-    CFrame.new() -- default CFrame, will work regardless of position
-)
-startAutoFavorite()
+-- Function to equip pet dynamically
+local function equipPet(petId)
+    local player = game.Players.LocalPlayer
+    local pet = player.Backpack:FindFirstChild(petId) or player.Character:FindFirstChild(petId)
+    
+    -- Get pet's CFrame if it exists, otherwise use default
+    local petCFrame = pet and pet.PrimaryPart and pet.PrimaryPart.CFrame or CFrame.new()
+    
+    game.ReplicatedStorage.GameEvents.PetsService:FireServer(
+        "EquipPet",
+        petId,
+        petCFrame
+    )
+    
+    startAutoFavorite()
+end
 
--- Unequip pet and stop auto-favoriting
-game.ReplicatedStorage.GameEvents.PetsService:FireServer(
-    "UnequipPet",
-    "{9c8926b2-0362-4019-85e7-905ea7a8433a}"
-)
-stopAutoFavorite()
+-- Function to unequip pet
+local function unequipPet(petId)
+    game.ReplicatedStorage.GameEvents.PetsService:FireServer(
+        "UnequipPet",
+        petId
+    )
+    
+    stopAutoFavorite()
+end
+
+-- Example usage
+local petId = "{9c8926b2-0362-4019-85e7-905ea7a8433a}"
+equipPet(petId)
+
+-- When you want to unequip
+unequipPet(petId)
