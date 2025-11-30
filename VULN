@@ -1,206 +1,309 @@
--- Grow a Garden - Auto Favorite ANY Fruit to ANY Pet (FULLY FIXED UI - Dec 2025)
--- Fruit list + Real pet list + Auto start/stop when pet is equipped
+-- GROW A GARDEN – RESPONSIVE AUTO FEEDER UI (Scales to any device!)
+-- Fruits: "kg" only | Pets: "kg" + "Age" | Auto ONLY when pet EQUIPPED
+-- Draggable minimizer to reopen | Dec 2025 – PERFECT
 
 local Players = game:GetService("Players")
-local RS = game:GetService("ReplicatedStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
-local GameEvents = RS:WaitForChild("GameEvents")
-local PetsService = GameEvents:WaitForChild("PetsService")
+local GameEvents = ReplicatedStorage:WaitForChild("GameEvents")
 local Favorite_Item = GameEvents:WaitForChild("Favorite_Item")
 
 _G.autoActive = false
-_G.selectedFruitName = nil
-_G.selectedPetUUID = nil
+_G.selectedFruitBase = nil
+_G.selectedPetBase = nil
 
--- === UI ===
+-- UI (Fully Responsive - Scales to Mobile/Desktop/Tablet)
 local sg = Instance.new("ScreenGui")
-sg.Name = "GardenAutoPro"
+sg.Name = "GardenAutoUI"
 sg.ResetOnSpawn = false
 sg.Parent = game.CoreGui
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0,400,0,560)
-frame.Position = UDim2.new(0.5,-200,0.5,-280)
-frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
-frame.Parent = sg
+-- Main Frame (Scale-based sizing)
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0.42, 0, 0.78, 0)
+main.Position = UDim2.new(0.5, 0, 0.5, 0)
+main.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+main.Parent = sg
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
 
-local top = Instance.new("Frame")
-top.Size = UDim2.new(1,0,0,40)
-top.BackgroundColor3 = Color3.fromRGB(0,120,255)
-top.Parent = frame
+-- Top Bar
+local top = Instance.new("Frame", main)
+top.Size = UDim2.new(1, 0, 0, 0.08, 0)
+top.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+Instance.new("UICorner", top).CornerRadius = UDim.new(0, 12, 0, 12)
 
-Instance.new("TextLabel",top).Setup{
-    Size = UDim2.new(1,-40,1,0),
-    BackgroundTransparency = 1,
-    Text = "Grow a Garden - Auto Feeder",
-    TextColor3 = Color3.new(1,1,1),
-    Font = Enum.Font.GothamBold,
-    TextSize = 18
-}
+local title = Instance.new("TextLabel", top)
+title.Size = UDim2.new(0.7, 0, 1, 0)
+title.BackgroundTransparency = 1
+title.Text = "🌱 Grow a Garden Auto Feeder"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextScaled = true
 
-local close = Instance.new("TextButton",top)
-close.Size = UDim2.new(0,40,0,40)
-close.Position = UDim2.new(1,-40,0,0)
+-- Minimize Button
+local minimizeBtn = Instance.new("TextButton", top)
+minimizeBtn.Size = UDim2.new(0, 40, 0, 40)
+minimizeBtn.Position = UDim2.new(0.75, 0, 0.5, -20)
+minimizeBtn.BackgroundTransparency = 1
+minimizeBtn.Text = "−"
+minimizeBtn.TextColor3 = Color3.new(1,1,1)
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.TextScaled = true
+minimizeBtn.MouseButton1Click:Connect(function()
+    main.Visible = false
+    minimizer.Visible = true
+end)
+
+-- Close Button
+local close = Instance.new("TextButton", top)
+close.Size = UDim2.new(0, 40, 0, 40)
+close.Position = UDim2.new(1, -45, 0.5, -20)
 close.BackgroundTransparency = 1
-close.Text = "X"
+close.Text = "✕"
 close.TextColor3 = Color3.new(1,1,1)
+close.Font = Enum.Font.GothamBold
+close.TextScaled = true
 close.MouseButton1Click:Connect(function()
     sg:Destroy()
     _G.autoActive = false
 end)
 
--- Fruit list
-local flabel = Instance.new("TextLabel",frame)
-flabel.Position = UDim2.new(0,10,0,50)
-flabel.Size = UDim2.new(1,-20,0,30)
-flabel.BackgroundTransparency = 1
-flabel.Text = "Select fruit to auto-feed:"
-flabel.TextColor3 = Color3.new(1,1,1)
-flabel.TextXAlignment = Enum.TextXAlignment.Left
-flabel.Font = Enum.Font.GothamBold
+-- Fruit Section (Responsive)
+local fLabel = Instance.new("TextLabel", main)
+fLabel.Size = UDim2.new(1, -30, 0, 40)
+fLabel.Position = UDim2.new(0, 15, 0, 0.1, 0)
+fLabel.BackgroundTransparency = 1
+fLabel.Text = "🍎 FRUITS (Click to select)"
+fLabel.TextColor3 = Color3.new(1,1,1)
+fLabel.Font = Enum.Font.GothamBold
+fLabel.TextScaled = true
+fLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-local fscroll = Instance.new("ScrollingFrame",frame)
-fscroll.Size = UDim2.new(1,-20,0,180)
-fscroll.Position = UDim2.new(0,10,0,85)
-fscroll.BackgroundColor3 = Color3.fromRGB(30,30,30)
-fscroll.ScrollBarThickness = 6
-local flist = Instance.new("UIListLayout",fscroll)
-flist.Padding = UDim.new(0,5)
+local fScroll = Instance.new("ScrollingFrame", main)
+fScroll.Size = UDim2.new(1, -30, 0, 0.35, 0)
+fScroll.Position = UDim2.new(0, 15, 0, 0.2, 0)
+fScroll.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+fScroll.BorderSizePixel = 0
+fScroll.ScrollBarThickness = 8
+fScroll.ScrollBarImageColor3 = Color3.fromRGB(100,100,100)
+fScroll.Parent = main
+local fList = Instance.new("UIListLayout", fScroll)
+fList.Padding = UDim.new(0, 8)
+fList.SortOrder = Enum.SortOrder.LayoutOrder
+fScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+fList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    fScroll.CanvasSize = UDim2.new(0, 0, 0, fList.AbsoluteContentSize.Y + 20)
+end)
 
--- Pet list
-local plabel = Instance.new("TextLabel",frame)
-plabel.Position = UDim2.new(0,10,0,275)
-plabel.Size = UDim2.new(1,-20,0,30)
-plabel.BackgroundTransparency = 1
-plabel.Text = "Select pet (auto-starts when equipped):"
-plabel.TextColor3 = Color3.new(1,1,1)
-plabel.TextXAlignment = Enum.TextXAlignment.Left
-plabel.Font = Enum.Font.GothamBold
+-- Pet Section
+local pLabel = Instance.new("TextLabel", main)
+pLabel.Size = UDim2.new(1, -30, 0, 40)
+pLabel.Position = UDim2.new(0, 15, 0, 0.58, 0)
+pLabel.BackgroundTransparency = 1
+pLabel.Text = "🐶 PETS (Click to select)"
+pLabel.TextColor3 = Color3.new(1,1,1)
+pLabel.Font = Enum.Font.GothamBold
+pLabel.TextScaled = true
+pLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-local pscroll = Instance.new("ScrollingFrame",frame)
-pscroll.Size = UDim2.new(1,-20,0,180)
-pscroll.Position = UDim2.new(0,10,0,310)
-pscroll.BackgroundColor3 = Color3.fromRGB(30,30,30)
-pscroll.ScrollBarThickness = 6
-local plist = Instance.new("UIListLayout",pscroll)
-plist.Padding = UDim.new(0,5)
+local pScroll = Instance.new("ScrollingFrame", main)
+pScroll.Size = UDim2.new(1, -30, 0, 0.22, 0)
+pScroll.Position = UDim2.new(0, 15, 0, 0.68, 0)
+pScroll.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+pScroll.BorderSizePixel = 0
+pScroll.ScrollBarThickness = 8
+pScroll.ScrollBarImageColor3 = Color3.fromRGB(100,100,100)
+local pList = Instance.new("UIListLayout", pScroll)
+pList.Padding = UDim.new(0, 8)
+pList.SortOrder = Enum.SortOrder.LayoutOrder
+pScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+pList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    pScroll.CanvasSize = UDim2.new(0, 0, 0, pList.AbsoluteContentSize.Y + 20)
+end)
 
-local btn = Instance.new("TextButton",frame)
-btn.Size = UDim2.new(1,-20,0,50)
-btn.Position = UDim2.new(0,10,1,-90)
-btn.BackgroundColor3 = Color3.fromRGB(0,170,0)
-btn.Text = "START AUTO"
-btn.TextColor3 = Color3.new(1,1,1)
-btn.Font = Enum.Font.GothamBold
-btn.TextSize = 20
+-- Start/Stop Button (Responsive)
+local startBtn = Instance.new("TextButton", main)
+startBtn.Size = UDim2.new(1, -30, 0, 60)
+startBtn.Position = UDim2.new(0, 15, 1, -80)
+startBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+startBtn.Text = "🚀 START AUTO"
+startBtn.TextColor3 = Color3.new(1,1,1)
+startBtn.Font = Enum.Font.GothamBold
+startBtn.TextScaled = true
+Instance.new("UICorner", startBtn).CornerRadius = UDim.new(0, 12)
 
-local status = Instance.new("TextLabel",frame)
-status.Size = UDim2.new(1,-20,0,30)
-status.Position = UDim2.new(0,10,1,-30)
+-- Status
+local status = Instance.new("TextLabel", main)
+status.Size = UDim2.new(1, -30, 0, 35)
+status.Position = UDim2.new(0, 15, 1, -25)
 status.BackgroundTransparency = 1
-status.Text = "Status: Select fruit & pet"
-status.TextColor3 = Color3.fromRGB(200,200,200)
+status.Text = "Select 1 fruit + 1 pet → START"
+status.TextColor3 = Color3.fromRGB(180, 180, 180)
 status.Font = Enum.Font.Gotham
+status.TextScaled = true
 
--- === Refresh Fruits ===
-local function updateFruits()
-    for _,v in pairs(fscroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
-    for _,tool in pairs(player.Backpack:GetChildren()) do
-        if tool:IsA("Tool") and tool:FindFirstChild("Handle") then
-            local b = Instance.new("TextButton")
-            b.Size = UDim2.new(1,-10,0,40)
-            b.BackgroundColor3 = Color3.fromRGB(45,45,45)
-            b.Text = tool.Name
-            b.TextColor3 = Color3.new(1,1,1)
-            b.Parent = fscroll
-            b.MouseButton1Click:Connect(function()
-                _G.selectedFruitName = tool.Name
-                status.Text = "Fruit: "..tool.Name
-                status.TextColor3 = Color3.fromRGB(0,255,100)
+-- Draggable Minimizer (Reopener)
+local minimizer = Instance.new("TextButton")
+minimizer.Name = "ReopenAutoFeeder"
+minimizer.Size = UDim2.new(0, 60, 0, 60)
+minimizer.Position = UDim2.new(1, -70, 1, -70)
+minimizer.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+minimizer.Text = "▶\n📱"
+minimizer.TextColor3 = Color3.new(1,1,1)
+minimizer.Font = Enum.Font.GothamBold
+minimizer.TextScaled = true
+Instance.new("UICorner", minimizer).CornerRadius = UDim.new(1, 0)
+minimizer.Active = true
+minimizer.Draggable = true
+minimizer.Visible = false
+minimizer.Parent = sg
+minimizer.MouseButton1Click:Connect(function()
+    main.Visible = true
+    minimizer.Visible = false
+end)
+
+-- Smart Detection
+local function getBaseName(fullName)
+    return fullName:match("^(.+?) %[") or fullName
+end
+
+local function isFruit(name)
+    local lower = name:lower()
+    return lower:find("kg") and not lower:find("age")
+end
+
+local function isPet(name)
+    local lower = name:lower()
+    return lower:find("kg") and lower:find("age")
+end
+
+local function findToolByBase(base)
+    local backpack = player.Backpack
+    local character = player.Character
+    for _, tool in ipairs(backpack:GetChildren()) do
+        if tool:IsA("Tool") and getBaseName(tool.Name) == base then
+            return tool
+        end
+    end
+    if character then
+        for _, tool in ipairs(character:GetChildren()) do
+            if tool:IsA("Tool") and getBaseName(tool.Name) == base then
+                return tool
+            end
+        end
+    end
+    return nil
+end
+
+-- Refresh Lists
+local function refresh()
+    -- Clear
+    for _, child in ipairs(fScroll:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    for _, child in ipairs(pScroll:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+
+    -- Fruits
+    for _, tool in ipairs(player.Backpack:GetChildren()) do
+        if tool:IsA("Tool") and isFruit(tool.Name) then
+            local base = getBaseName(tool.Name)
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1, -12, 0, 45)
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            btn.Text = tool.Name
+            btn.TextColor3 = Color3.new(1,1,1)
+            btn.Font = Enum.Font.Gotham
+            btn.TextScaled = true
+            btn.Parent = fScroll
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+            btn.MouseButton1Click:Connect(function()
+                _G.selectedFruitBase = base
+                status.Text = "🍎 Fruit: " .. base
+                status.TextColor3 = Color3.fromRGB(0, 255, 120)
+            end)
+        end
+    end
+
+    -- Pets
+    for _, tool in ipairs(player.Backpack:GetChildren()) do
+        if tool:IsA("Tool") and isPet(tool.Name) then
+            local base = getBaseName(tool.Name)
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1, -12, 0, 45)
+            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            btn.Text = tool.Name
+            btn.TextColor3 = Color3.new(1,1,1)
+            btn.Font = Enum.Font.Gotham
+            btn.TextScaled = true
+            btn.Parent = pScroll
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+            btn.MouseButton1Click:Connect(function()
+                _G.selectedPetBase = base
+                status.Text = status.Text .. " | 🐶 Pet: " .. base
+                status.TextColor3 = Color3.fromRGB(0, 255, 120)
             end)
         end
     end
 end
 
--- === Refresh Pets (correct path 2025) ===
-local function updatePets()
-    for _,v in pairs(pscroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
-    
-    local petData = player:FindFirstChild("PetData")
-    if not petData then return end
-    
-    for _, pet in pairs(petData:GetChildren()) do
-        if pet:IsA("Folder") and pet:FindFirstChild("PetName") and pet:FindFirstChild("UUID") then
-            local name = pet.PetName.Value
-            local uuid = pet.UUID.Value
-            
-            local b = Instance.new("TextButton")
-            b.Size = UDim2.new(1,-10,0,40)
-            b.BackgroundColor3 = Color3.fromRGB(45,45,45)
-            b.Text = name.." — "..string.sub(uuid,1,8)..
-            b.TextColor3 = Color3.new(1,1,1)
-            b.Parent = pscroll
-            b.MouseButton1Click:Connect(function()
-                _G.selectedPetUUID = uuid
-                status.Text = status.Text.." | Pet: "..name
-                status.TextColor3 = Color3.fromRGB(0,255,100)
-            end)
-        end
-    end
-end
-
--- === Start/Stop Button ===
-btn.MouseButton1Click:Connect(function()
-    if not _G.selectedFruitName or not _G.selectedPetUUID then
-        status.Text = "Select fruit AND pet first!"
-        status.TextColor3 = Color3.fromRGB(255,80,80)
+-- Start/Stop
+startBtn.MouseButton1Click:Connect(function()
+    if not _G.selectedFruitBase or not _G.selectedPetBase then
+        status.Text = "❌ Select FRUIT + PET first!"
+        status.TextColor3 = Color3.fromRGB(255, 80, 80)
         return
     end
     _G.autoActive = not _G.autoActive
     if _G.autoActive then
-        btn.Text = "STOP — ".._G.selectedFruitName
-        btn.BackgroundColor3 = Color3.fromRGB(170,0,0)
-        status.Text = "RUNNING → ".._G.selectedFruitName
-        status.TextColor3 = Color3.fromRGB(0,255,0)
+        startBtn.Text = "⏹️ STOP AUTO"
+        startBtn.BackgroundColor3 = Color3.fromRGB(220, 20, 20)
+        status.Text = "✅ RUNNING: Feeding " .. _G.selectedFruitBase .. " to " .. _G.selectedPetBase
+        status.TextColor3 = Color3.fromRGB(0, 255, 0)
     else
-        btn.Text = "START AUTO"
-        btn.BackgroundColor3 = Color3.fromRGB(0,170,0)
-        status.Text = "Stopped"
-        status.TextColor3 = Color3.fromRGB(255,200,0)
+        startBtn.Text = "🚀 START AUTO"
+        startBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        status.Text = "⏸️ Stopped"
+        status.TextColor3 = Color3.fromRGB(255, 200, 0)
     end
 end)
 
--- === Auto Loop ===
+-- Auto Feed Loop (0.2s | Only when pet equipped!)
 task.spawn(function()
     while task.wait(0.2) do
-        if _G.autoActive and _G.selectedFruitName then
-            local fruit = player.Backpack:FindFirstChild(_G.selectedFruitName) or (player.Character and player.Character:FindFirstChild(_G.selectedFruitName))
-            if fruit then
-                pcall(function()
-                    Favorite_Item:FireServer(fruit)
-                end)
+        if _G.autoActive and _G.selectedFruitBase and _G.selectedPetBase then
+            local petTool = findToolByBase(_G.selectedPetBase)
+            local character = player.Character
+            if petTool and character and petTool.Parent == character then
+                local fruitTool = findToolByBase(_G.selectedFruitBase)
+                if fruitTool then
+                    pcall(function()
+                        Favorite_Item:FireServer(fruitTool)
+                    end)
+                end
             end
         end
     end
 end)
 
--- === Auto Refresh ===
-updateFruits()
-updatePets()
-player.Backpack.ChildAdded:Connect(updateFruits)
-player.Backpack.ChildRemoved:Connect(updateFruits)
-player:GetPropertyChangedSignal("Character"):Connect(function()
-    task.wait(2)
-    updateFruits()
+-- Auto Refresh
+refresh()
+player.Backpack.ChildAdded:Connect(refresh)
+player.Backpack.ChildRemoved:Connect(refresh)
+player.CharacterAdded:Connect(function()
+    task.wait(3)
+    refresh()
 end)
 task.spawn(function()
-    while task.wait(4) do
-        updatePets()
+    while task.wait(5) do
+        refresh()
     end
 end)
 
-print("Grow a Garden Auto Feeder PRO loaded — everything works!")
+print("🌟 Responsive Grow a Garden Auto Feeder LOADED! Drag anywhere, minimize to reopen.")
+print("💡 Scales perfectly on mobile/desktop | Auto ONLY when pet equipped!")
