@@ -1,8 +1,9 @@
--- Egg Enhancer UI - Fully Responsive Dark Theme (Works on ALL Devices)
--- LocalScript → Place in StarterGui or StarterPlayerScripts
+-- Egg Enhancer UI - Compact + Draggable Toggle Button (Perfect for Mobile & PC)
+-- LocalScript → StarterGui
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
@@ -11,90 +12,86 @@ ScreenGui.Name = "EggEnhancerUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = playerGui
 
--- Main Frame (Responsive Size)
+-- ================= MAIN UI FRAME (Compact) =================
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.fromScale(0.85, 0.8)        -- 85% width, 80% height of screen
+MainFrame.Size = UDim2.fromScale(0.75, 0.7)        -- Smaller: 75% width, 70% height
 MainFrame.Position = UDim2.fromScale(0.5, 0.5)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
 MainFrame.BorderSizePixel = 0
 MainFrame.Visible = false
+MainFrame.ZIndex = 10
 MainFrame.Parent = ScreenGui
 
 local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 20)
+UICorner.CornerRadius = UDim.new(0, 16)
 UICorner.Parent = MainFrame
 
 local UIStroke = Instance.new("UIStroke")
-UIStroke.Color = Color3.fromRGB(60, 60, 60)
-UIStroke.Thickness = 3
+UIStroke.Color = Color3.fromRGB(70, 70, 70)
+UIStroke.Thickness = 2
 UIStroke.Parent = MainFrame
 
 -- Title Bar
 local TitleBar = Instance.new("Frame")
-TitleBar.Size = UDim2.fromScale(1, 0.1)
-TitleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-TitleBar.BorderSizePixel = 0
+TitleBar.Size = UDim2.fromScale(1, 0.12)
+TitleBar.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
 TitleBar.Parent = MainFrame
 
 local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 20)
+TitleCorner.CornerRadius = UDim.new(0, 16)
 TitleCorner.Parent = TitleBar
 
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Size = UDim2.fromScale(0.7, 1)
-TitleLabel.Position = UDim2.fromScale(0, 0)
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.Text = "Egg Enhancer - by Jandel"
 TitleLabel.TextColor3 = Color3.new(1, 1, 1)
 TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextSize = 24
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.TextScaled = true
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.Parent = TitleBar
 
-local TitlePadding = Instance.new("UIPadding")
-TitlePadding.PaddingLeft = UDim.new(0, 20)
-TitlePadding.Parent = TitleLabel
+local Padding = Instance.new("UIPadding")
+Padding.PaddingLeft = UDim.new(0, 15)
+Padding.Parent = TitleLabel
 
--- Close Button (Top Right)
+-- Close Button
 local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.fromScale(0.12, 0.8)
-CloseButton.Position = UDim2.fromScale(0.96, 0.1)
+CloseButton.Size = UDim2.fromScale(0.11, 0.7)
+CloseButton.Position = UDim2.fromScale(0.96, 0.15)
 CloseButton.AnchorPoint = Vector2.new(1, 0)
-CloseButton.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+CloseButton.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
 CloseButton.Text = "X"
 CloseButton.TextColor3 = Color3.new(1, 1, 1)
-CloseButton.Font = Enum.Font.GothamBold
 CloseButton.TextScaled = true
+CloseButton.Font = Enum.Font.GothamBold
 CloseButton.Parent = TitleBar
 
 local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 12)
+CloseCorner.CornerRadius = UDim.new(0, 10)
 CloseCorner.Parent = CloseButton
 
--- Tab Buttons (Horizontal List)
+-- Tabs Bar
 local TabButtonsFrame = Instance.new("Frame")
 TabButtonsFrame.Size = UDim2.fromScale(1, 0.1)
-TabButtonsFrame.Position = UDim2.fromScale(0, 0.1)
-TabButtonsFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TabButtonsFrame.Position = UDim2.fromScale(0, 0.12)
+TabButtonsFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
 TabButtonsFrame.Parent = MainFrame
 
 local TabLayout = Instance.new("UIListLayout")
 TabLayout.FillDirection = Enum.FillDirection.Horizontal
-TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-TabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-TabLayout.Padding = UDim.new(0, 10)
+TabLayout.Padding = UDim.new(0, 4)
 TabLayout.Parent = TabButtonsFrame
 
 -- Content Area
 local TabContent = Instance.new("Frame")
-TabContent.Size = UDim2.fromScale(0.95, 0.75)
-TabContent.Position = UDim2.fromScale(0.025, 0.2)
+TabContent.Size = UDim2.fromScale(0.94, 0.74)
+TabContent.Position = UDim2.fromScale(0.03, 0.23)
 TabContent.BackgroundTransparency = 1
 TabContent.Parent = MainFrame
 
--- Tabs Definition
+-- Tabs
 local Tabs = {
 	{ Name = "Fruit Name & Pet UUID" },
 	{ Name = "Koi UUID" },
@@ -102,121 +99,133 @@ local Tabs = {
 }
 
 local currentTab = nil
-
-local function openTab(tabIndex)
+local function openTab(i)
 	if currentTab then
 		currentTab.Content.Visible = false
-		currentTab.Button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+		currentTab.Button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	end
-	local tab = Tabs[tabIndex]
+	local tab = Tabs[i]
 	currentTab = tab
 	tab.Content.Visible = true
-	tab.Button.BackgroundColor3 = Color3.fromRGB(70, 130, 240)
+	tab.Button.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
 end
 
--- Create Tabs
 for i, tab in ipairs(Tabs) do
-	-- Tab Button
-	local button = Instance.new("TextButton")
-	button.Size = UDim2.fromScale(0.3, 0.8)
-	button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-	button.Text = tab.Name
-	button.TextColor3 = Color3.new(1, 1, 1)
-	button.Font = Enum.Font.GothamSemibold
-	button.TextScaled = true
-	button.Parent = TabButtonsFrame
+	-- Button
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.fromScale(0.328, 0.85)
+	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	btn.Text = tab.Name
+	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.TextScaled = true
+	btn.Font = Enum.Font.GothamSemibold
+	btn.Parent = TabButtonsFrame
 
-	local btnCorner = Instance.new("UICorner")
-	btnCorner.CornerRadius = UDim.new(0, 12)
-	btnCorner.Parent = button
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = btn
 
-	local btnPadding = Instance.new("UIPadding")
-	btnPadding.PaddingAll = UDim.new(0, 10)
-	btnPadding.Parent = button
+	tab.Button = btn
 
-	tab.Button = button
-
-	-- Tab Content
+	-- Content
 	local content = Instance.new("ScrollingFrame")
 	content.Size = UDim2.fromScale(1, 1)
 	content.BackgroundTransparency = 1
-	content.ScrollBarThickness = 6
-	content.Visible = false
-	content.CanvasSize = UDim2.fromScale(0, 0) -- Auto later if needed
+	content.ScrollBarThickness = 5
 	content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	content.Visible = false
 	content.Parent = TabContent
 
-	local contentLayout = Instance.new("UIListLayout")
-	contentLayout.Padding = UDim.new(0, 15)
-	contentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	contentLayout.Parent = content
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 12)
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.Parent = content
 
-	local contentPadding = Instance.new("UIPadding")
-	contentPadding.PaddingTop = UDim.new(0, 20)
-	contentPadding.PaddingLeft = UDim.new(0, 20)
-	contentPadding.PaddingRight = UDim.new(0, 20)
-	contentPadding.Parent = content
+	local pad = Instance.new("UIPadding")
+	pad.PaddingTop = UDim.new(0, 15)
+	pad.PaddingLeft = UDim.new(0, 10)
+	pad.PaddingRight = UDim.new(0, 10)
+	pad.Parent = content
 
-	-- Placeholder Text
-	local placeholder = Instance.new("TextLabel")
-	placeholder.Size = UDim2.fromScale(0.9, 0)
-	placeholder.AutomaticSize = Enum.AutomaticSize.Y
-	placeholder.BackgroundTransparency = 1
-	placeholder.Text = "Content for <b>"..tab.Name.."</b> tab\n\nAdd your TextBoxes, Buttons, etc. here!"
-	placeholder.TextColor3 = Color3.fromRGB(220, 220, 220)
-	placeholder.Font = Enum.Font.Gotham
-	placeholder.TextSize = 20
-	placeholder.TextWrapped = true
-	placeholder.TextXAlignment = Enum.TextXAlignment.Left
-	placeholder.RichText = true
-	placeholder.Parent = content
+	-- Placeholder
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.fromScale(0.95, 0)
+	label.AutomaticSize = Enum.AutomaticSize.Y
+	label.BackgroundTransparency = 1
+	label.Text = "Ready — Add your inputs here\n\nTab: " .. tab.Name
+	label.TextColor3 = Color3.fromRGB(200, 200, 200)
+	label.TextWrapped = true
+	label.TextScaled = true
+	label.Font = Enum.Font.Gotham
+	label.Parent = content
 
 	tab.Content = content
-
-	-- Click to open
-	button.MouseButton1Click:Connect(function()
-		openTab(i)
-	end)
+	btn.MouseButton1Click:Connect(function() openTab(i) end)
 end
 
--- Open first tab by default
 openTab(1)
 
--- Toggle Button (Always Visible)
+-- ================= DRAGGABLE TOGGLE BUTTON (Egg) =================
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.fromOffset(70, 70)
-ToggleButton.Position = UDim2.fromScale(0.05, 0.5)
-ToggleButton.AnchorPoint = Vector2.new(0, 0.5)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(70, 130, 240)
+ToggleButton.Size = UDim2.fromOffset(65, 65)
+ToggleButton.Position = UDim2.fromScale(0.05, 0.8)  -- Default bottom-leftish
+ToggleButton.BackgroundColor3 = Color3.fromRGB(70, 130, 255)
 ToggleButton.Text = "Egg"
 ToggleButton.TextColor3 = Color3.new(1, 1, 1)
-ToggleButton.Font = Enum.Font.GothamBold
 ToggleButton.TextScaled = true
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.ZIndex = 20
 ToggleButton.Parent = ScreenGui
 
 local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(0, 35)
+ToggleCorner.CornerRadius = UDim.new(0, 32)
 ToggleCorner.Parent = ToggleButton
 
 local ToggleStroke = Instance.new("UIStroke")
 ToggleStroke.Color = Color3.fromRGB(100, 180, 255)
-ToggleStroke.Thickness = 4
+ToggleStroke.Thickness = 3
 ToggleStroke.Parent = ToggleButton
 
--- Toggle Logic
+-- Make Toggle Button Draggable
+local dragging = false
+local dragStart, startPos
+
+ToggleButton.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = ToggleButton.Position
+	end
+end)
+
+ToggleButton.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		ToggleButton.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-- Toggle UI Open/Close
 local isOpen = false
 local function toggleUI()
 	isOpen = not isOpen
 	MainFrame.Visible = isOpen
 
 	if isOpen then
-		MainFrame.Position = UDim2.fromScale(0.5, -0.5)
-		TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint), 
-			{Position = UDim2.fromScale(0.5, 0.5)}):Play()
+		MainFrame.Position = UDim2.fromScale(0.5, 1.5)
+		TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
 	else
-		TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quint), 
-			{Position = UDim2.fromScale(0.5, 1.5)}):Play()
-		task.wait(0.5)
+		TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {Position = UDim2.fromScale(0.5, -1)}):Play()
+		task.wait(0.45)
 		if not isOpen then MainFrame.Visible = false end
 	end
 end
@@ -224,11 +233,4 @@ end
 ToggleButton.MouseButton1Click:Connect(toggleUI)
 CloseButton.MouseButton1Click:Connect(toggleUI)
 
--- Optional: Press E to toggle (PC only)
-player:GetMouse().KeyDown:Connect(function(key)
-	if key:lower() == "e" then
-		toggleUI()
-	end
-end)
-
-print("Egg Enhancer UI Loaded (Fully Responsive) - by Jandel | Tap Egg or Press E")
+print("Egg Enhancer UI Loaded | Drag the Egg button anywhere | Perfect size now!")
