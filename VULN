@@ -1,4 +1,4 @@
--- Egg Enhancer - by Jandel (Short & Clean)
+-- Egg Enhancer - by Jandel (Black & White Vuln Style)
 local TS = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 local Player = game.Players.LocalPlayer
@@ -14,46 +14,46 @@ local Frame = Instance.new("Frame", GUI)
 Frame.Size = UDim2.fromScale(0.72, 0.68)
 Frame.Position = UDim2.fromScale(0.5, 0.5)
 Frame.AnchorPoint = Vector2.new(0.5, 0.5)
-Frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Frame.Visible = false
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,18)
-Instance.new("UIStroke", Frame).Color = Color3.fromRGB(80,80,80)
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
 
 -- Title
 local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.fromScale(1, 0.14)
-Title.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Title.Size = UDim2.fromScale(1, 0.12)
+Title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 Title.Text = "Egg Enhancer - by Jandel"
 Title.TextColor3 = Color3.new(1,1,1)
-Title.Font = Enum.Font.GothamBold
+Title.Font = Enum.Font.GothamMedium
 Title.TextScaled = true
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Instance.new("UIPadding", Title).PaddingLeft = UDim.new(0,18)
-Instance.new("UICorner", Title).CornerRadius = UDim.new(0,18)
+Instance.new("UIPadding", Title).PaddingLeft = UDim.new(0, 15)
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 12)
 
--- Close Button
-local Close = Instance.new("TextButton", Title)
-Close.Size = UDim2.fromScale(0.11, 0.7)
-Close.Position = UDim2.fromScale(0.96, 0.15)
-Close.AnchorPoint = Vector2.new(1,0)
-Close.BackgroundColor3 = Color3.fromRGB(220,40,40)
-Close.Text = "X"
-Close.TextScaled = true
-Instance.new("UICorner", Close).CornerRadius = UDim.new(0,12)
+-- Minimize Button (small square)
+local Minimize = Instance.new("TextButton", Title)
+Minimize.Size = UDim2.fromOffset(28, 28)
+Minimize.Position = UDim2.fromScale(1, 0)
+Minimize.AnchorPoint = Vector2.new(1, 0)
+Minimize.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Minimize.Text = "−"
+Minimize.TextColor3 = Color3.new(1,1,1)
+Minimize.TextScaled = true
+Instance.new("UICorner", Minimize).CornerRadius = UDim.new(0, 6)
 
 -- Tabs
 local TabsFrame = Instance.new("Frame", Frame)
 TabsFrame.Size = UDim2.fromScale(1, 0.11)
-TabsFrame.Position = UDim2.fromScale(0, 0.14)
-TabsFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+TabsFrame.Position = UDim2.fromScale(0, 0.12)
+TabsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 local Layout = Instance.new("UIListLayout", TabsFrame)
 Layout.FillDirection = Enum.FillDirection.Horizontal
-Layout.Padding = UDim.new(0,6)
+Layout.Padding = UDim.new(0, 8)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local Content = Instance.new("Frame", Frame)
 Content.Size = UDim2.fromScale(0.94, 0.71)
-Content.Position = UDim2.fromScale(0.03, 0.26)
+Content.Position = UDim2.fromScale(0.03, 0.24)
 Content.BackgroundTransparency = 1
 
 local TabList = {"Fruit Name & Pet UUID", "Koi UUID", "Seal UUID"}
@@ -62,40 +62,55 @@ local Current
 for i, name in ipairs(TabList) do
 	local btn = Instance.new("TextButton", TabsFrame)
 	btn.Size = UDim2.fromScale(0.31, 0.85)
-	btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	btn.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
 	btn.Text = name
+	btn.TextColor3 = Color3.new(1,1,1)
 	btn.TextScaled = true
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,12)
+	btn.Font = Enum.Font.Gotham
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
 	
 	local page = Instance.new("ScrollingFrame", Content)
 	page.Size = UDim2.fromScale(1,1)
 	page.BackgroundTransparency = 1
 	page.Visible = false
 	page.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	Instance.new("UIListLayout", page).Padding = UDim.new(0,15)
+	page.ScrollBarThickness = 4
+	Instance.new("UIListLayout", page).Padding = UDim.new(0, 15)
+	Instance.new("UIPadding", page).PaddingTop = UDim.new(0, 10)
+	
+	-- Placeholder text
+	local info = Instance.new("TextLabel", page)
+	info.Size = UDim2.fromScale(1, 0)
+	info.AutomaticSize = Enum.AutomaticSize.Y
+	info.BackgroundTransparency = 1
+	info.Text = "Ready — Add your features here\n\nTab: "..name
+	info.TextColor3 = Color3.fromRGB(200, 200, 200)
+	info.TextWrapped = true
+	info.TextScaled = true
+	info.Font = Enum.Font.Gotham
 	
 	btn.MouseButton1Click:Connect(function()
 		if Current then Current.Visible = false end
 		Current = page; page.Visible = true
 		for _, b in pairs(TabsFrame:GetChildren()) do
-			if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(40,40,40) end
+			if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(55,55,55) end
 		end
-		btn.BackgroundColor3 = Color3.fromRGB(70,140,255)
+		btn.BackgroundColor3 = Color3.fromRGB(80,80,80)
 	end)
 	
-	if i == 1 then btn.BackgroundColor3 = Color3.fromRGB(70,140,255); page.Visible = true; Current = page end
+	if i == 1 then btn.BackgroundColor3 = Color3.fromRGB(80,80,80); page.Visible = true; Current = page end
 end
 
--- Draggable J Button (Black)
+-- Black J Reopener (Draggable)
 local J = Instance.new("TextButton", GUI)
-J.Size = UDim2.fromOffset(60,60)
-J.Position = UDim2.fromScale(0.05, 0.8)
+J.Size = UDim2.fromOffset(55, 55)
+J.Position = UDim2.fromScale(0.05, 0.82)
 J.BackgroundColor3 = Color3.new(0,0,0)
 J.Text = "J"
 J.TextColor3 = Color3.new(1,1,1)
 J.Font = Enum.Font.GothamBold
 J.TextScaled = true
-Instance.new("UICorner", J).CornerRadius = UDim.new(0,30)
+Instance.new("UICorner", J).CornerRadius = UDim.new(0, 28)
 
 -- Drag J
 local dragging, startPos, startInput
@@ -109,7 +124,7 @@ UIS.InputChanged:Connect(function(i)
 	end
 end)
 
--- Toggle
+-- Open/Close
 local open = false
 local function toggle()
 	open = not open
@@ -123,6 +138,6 @@ local function toggle()
 end
 
 J.MouseButton1Click:Connect(toggle)
-Close.MouseButton1Click:Connect(toggle)
+Minimize.MouseButton1Click:Connect(toggle)
 
-print("Jandel UI Loaded | Drag the black J button")
+print("Egg Enhancer Loaded | Tap black J to open | 100% Black & White")
