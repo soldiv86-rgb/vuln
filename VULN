@@ -1,143 +1,136 @@
--- Egg Enhancer - by Jandel (Black & White Vuln Style)
+-- Egg Enhancer - by Jandel (Perfect Box Style)
 local TS = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 local Player = game.Players.LocalPlayer
 local PG = Player:WaitForChild("PlayerGui")
 
 local GUI = Instance.new("ScreenGui", PG)
-GUI.Name = "JandelUI"
 GUI.ResetOnSpawn = false
 GUI.DisplayOrder = 999
 
--- Main Frame
-local Frame = Instance.new("Frame", GUI)
-Frame.Size = UDim2.fromScale(0.72, 0.68)
-Frame.Position = UDim2.fromScale(0.5, 0.5)
-Frame.AnchorPoint = Vector2.new(0.5, 0.5)
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Frame.Visible = false
-Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
+-- Main Box
+local Box = Instance.new("Frame", GUI)
+Box.Size = UDim2.fromScale(0.7, 0.65)
+Box.Position = UDim2.fromScale(0.5, 0.5)
+Box.AnchorPoint = Vector2.new(0.5, 0.5)
+Box.BackgroundColor3 = Color3.fromRGB(22,22,22)
+Box.BorderSizePixel = 2
+Box.BorderColor3 = Color3.fromRGB(60,60,60)
+Box.Visible = false
 
--- Title
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.fromScale(1, 0.12)
-Title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+-- Title Bar
+local Title = Instance.new("TextLabel", Box)
+Title.Size = UDim2.fromScale(1, 0.1)
+Title.BackgroundColor3 = Color3.fromRGB(28,28,28)
+Title.BorderSizePixel = 0
 Title.Text = "Egg Enhancer - by Jandel"
 Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamMedium
 Title.TextScaled = true
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Instance.new("UIPadding", Title).PaddingLeft = UDim.new(0, 15)
-Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 12)
+Instance.new("UIPadding", Title).PaddingLeft = UDim.new(0,12)
 
--- Minimize Button (small square)
-local Minimize = Instance.new("TextButton", Title)
-Minimize.Size = UDim2.fromOffset(28, 28)
-Minimize.Position = UDim2.fromScale(1, 0)
-Minimize.AnchorPoint = Vector2.new(1, 0)
-Minimize.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-Minimize.Text = "−"
-Minimize.TextColor3 = Color3.new(1,1,1)
-Minimize.TextScaled = true
-Instance.new("UICorner", Minimize).CornerRadius = UDim.new(0, 6)
+-- Minimize Button
+local Min = Instance.new("TextButton", Title)
+Min.Size = UDim2.fromOffset(32,32)
+Min.Position = UDim2.fromScale(1,0)
+Min.AnchorPoint = Vector2.new(1,0)
+Min.BackgroundColor3 = Color3.fromRGB(40,40,40)
+Min.Text = "−"
+Min.TextColor3 = Color3.new(1,1,1)
+Min.TextScaled = true
 
 -- Tabs
-local TabsFrame = Instance.new("Frame", Frame)
-TabsFrame.Size = UDim2.fromScale(1, 0.11)
-TabsFrame.Position = UDim2.fromScale(0, 0.12)
-TabsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-local Layout = Instance.new("UIListLayout", TabsFrame)
+local Tabs = Instance.new("Frame", Box)
+Tabs.Size = UDim2.fromScale(1, 0.09)
+Tabs.Position = UDim2.fromScale(0, 0.1)
+Tabs.BackgroundColor3 = Color3.fromRGB(33,33,33)
+
+local Layout = Instance.new("UIListLayout", Tabs)
 Layout.FillDirection = Enum.FillDirection.Horizontal
-Layout.Padding = UDim.new(0, 8)
+Layout.Padding = UDim.new(0,4)
 Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-local Content = Instance.new("Frame", Frame)
-Content.Size = UDim2.fromScale(0.94, 0.71)
-Content.Position = UDim2.fromScale(0.03, 0.24)
+local Content = Instance.new("ScrollingFrame", Box)
+Content.Size = UDim2.fromScale(0.96, 0.78)
+Content.Position = UDim2.fromScale(0.02, 0.2)
 Content.BackgroundTransparency = 1
+Content.ScrollBarThickness = 3
+Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-local TabList = {"Fruit Name & Pet UUID", "Koi UUID", "Seal UUID"}
-local Current
+local TabPages = {}
+local CurrentPage
 
-for i, name in ipairs(TabList) do
-	local btn = Instance.new("TextButton", TabsFrame)
-	btn.Size = UDim2.fromScale(0.31, 0.85)
-	btn.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+for i, name in {"Fruit Name & Pet UUID", "Koi UUID", "Seal UUID"} do
+	-- Tab Button
+	local btn = Instance.new("TextButton", Tabs)
+	btn.Size = UDim2.fromScale(0.31, 0.9)
+	btn.BackgroundColor3 = Color3.fromRGB(45,45,45)
 	btn.Text = name
 	btn.TextColor3 = Color3.new(1,1,1)
 	btn.TextScaled = true
 	btn.Font = Enum.Font.Gotham
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
 	
-	local page = Instance.new("ScrollingFrame", Content)
-	page.Size = UDim2.fromScale(1,1)
+	-- Tab Page
+	local page = Instance.new("Frame", Content)
+	page.Size = UDim2.fromScale(1,0)
 	page.BackgroundTransparency = 1
 	page.Visible = false
-	page.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	page.ScrollBarThickness = 4
-	Instance.new("UIListLayout", page).Padding = UDim.new(0, 15)
-	Instance.new("UIPadding", page).PaddingTop = UDim.new(0, 10)
-	
-	-- Placeholder text
-	local info = Instance.new("TextLabel", page)
-	info.Size = UDim2.fromScale(1, 0)
-	info.AutomaticSize = Enum.AutomaticSize.Y
-	info.BackgroundTransparency = 1
-	info.Text = "Ready — Add your features here\n\nTab: "..name
-	info.TextColor3 = Color3.fromRGB(200, 200, 200)
-	info.TextWrapped = true
-	info.TextScaled = true
-	info.Font = Enum.Font.Gotham
+	table.insert(TabPages, page)
 	
 	btn.MouseButton1Click:Connect(function()
-		if Current then Current.Visible = false end
-		Current = page; page.Visible = true
-		for _, b in pairs(TabsFrame:GetChildren()) do
-			if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(55,55,55) end
+		if CurrentPage then CurrentPage.Visible = false end
+		CurrentPage = page; page.Visible = true
+		for _, b in Tabs:GetChildren() do
+			if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(45,45,45) end
 		end
-		btn.BackgroundColor3 = Color3.fromRGB(80,80,80)
+		btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
 	end)
 	
-	if i == 1 then btn.BackgroundColor3 = Color3.fromRGB(80,80,80); page.Visible = true; Current = page end
+	if i == 1 then
+		btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+		page.Visible = true
+		CurrentPage = page
+	end
 end
 
 -- Black J Reopener (Draggable)
 local J = Instance.new("TextButton", GUI)
-J.Size = UDim2.fromOffset(55, 55)
-J.Position = UDim2.fromScale(0.05, 0.82)
+J.Size = UDim2.fromOffset(50,50)
 J.BackgroundColor3 = Color3.new(0,0,0)
 J.Text = "J"
 J.TextColor3 = Color3.new(1,1,1)
 J.Font = Enum.Font.GothamBold
 J.TextScaled = true
-Instance.new("UICorner", J).CornerRadius = UDim.new(0, 28)
 
 -- Drag J
-local dragging, startPos, startInput
-J.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-	dragging = true; startInput = i.Position; startPos = J.Position end end)
-J.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
-UIS.InputChanged:Connect(function(i)
-	if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-		local delta = i.Position - startInput
-		J.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+local dragging
+J.InputBegan:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		local conn; conn = UIS.InputChanged:Connect(function(inp)
+			if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then
+				J.Position += UDim2.fromOffset(inp.Position.X - J.AbsolutePosition.X - 25, inp.Position.Y - J.AbsolutePosition.Y - 25)
+			end
+		end)
+		i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then dragging = false; conn:Disconnect() end end)
 	end
 end)
 
--- Open/Close
+-- Toggle
 local open = false
 local function toggle()
 	open = not open
-	Frame.Visible = open
+	Box.Visible = open
 	if open then
-		Frame.Position = UDim2.fromScale(0.5, -0.6)
-		TS:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+		Box.Position = UDim2.fromScale(0.5, -0.7)
+		TS:Create(Box, TweenInfo.new(0.35, Enum.EasingStyle.Quint), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
 	else
-		TS:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {Position = UDim2.fromScale(0.5, -1)}):Play()
+		TS:Create(Box, TweenInfo.new(0.35, Enum.EasingStyle.Quint), {Position = UDim2.fromScale(0.5, -1)}):Play()
 	end
 end
 
 J.MouseButton1Click:Connect(toggle)
-Minimize.MouseButton1Click:Connect(toggle)
+Min.MouseButton1Click:Connect(toggle)
 
-print("Egg Enhancer Loaded | Tap black J to open | 100% Black & White")
+print("Box UI Loaded | Drag black J anywhere")
